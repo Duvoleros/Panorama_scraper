@@ -2,6 +2,7 @@ import requests
 import bs4
 import urllib.parse
 import os
+from datetime import date,timedelta
 
 def get_linked (link):
     
@@ -26,6 +27,7 @@ def Html_replace(string):
     string = Join_Stringlist(string,"\n", " ")
     string = Join_Stringlist(string,"\\n", " ")
     string = Join_Stringlist(string,"\\xa0", " ")
+    string = Join_Stringlist(string,"\xa0", " ")
     return string
 
 def Parse_news_text(request):
@@ -64,12 +66,60 @@ def Parse_news_picture(request):
             return name
         return ("Not connected to link")
     else:
-        return ("Not connected to link")   
+        return ("Not connected to link")
     
-main_link = 'https://panorama.pub/news/smi-kreml-santaziruet-papu-rimskogo'
-req = get_linked(main_link)
-print(os.getcwd())
-clean_current_dir()
-print(Parse_news_picture(req))
-print(Parse_news_title(req))
-print(Parse_news_text(req))
+def Parse_news_date(request):
+    if(request.status_code == 200):
+        html_source = bs4.BeautifulSoup(request.text,'lxml')
+        title = html_source.find_all('div',attrs={"class":"flex flex-col gap-x-3 gap-y-1.5 flex-wrap sm:flex-row"})
+        title = (title[0]).text
+        title = title.split(' ')
+        for i in range(0,len(title)):
+            title[i] = Html_replace(title[i])
+            title[i] = title[i].strip()
+        print(title)
+        timed=timedelta(
+            days=1,
+            seconds=0,
+            microseconds=0,
+            milliseconds=0,
+            minutes=0,
+            hours=0,
+            weeks=0
+        )
+        if(title[0] == "позавчера,"):
+            return date.today() - timed - timed
+        elif(title[0] == "вчера,"):
+            return date.today() - timed
+        elif(title[0] == "сегодня,"):
+            return date.today()
+        else:
+            day = int(title[0])
+            year = int(title[2])
+            month_switcher = {
+                'янв.': 1,
+                'февр.': 2,
+                'мар.': 3,
+                'апр.': 4,
+                'мая': 5,
+                'июн.': 6,
+                'июл.': 7,
+                'авг.': 8,
+                'сент.': 9,
+                'окт.': 10,
+                'нояб.': 11,
+                'дек.': 12
+            }
+            return date(year, month_switcher[title[1]], day)
+    else:
+        return ("Not connected to link")     
+
+if(__name__ == "__main__"):    
+    main_link = 'https://panorama.pub/news/ajfony-zabirali-noutbuki-aborigeny-v'
+    req = get_linked(main_link)
+    print(os.getcwd())
+    clean_current_dir()
+    print(Parse_news_picture(req))
+    print(Parse_news_title(req))
+    print(Parse_news_text(req))
+    print(Parse_news_date(req))
