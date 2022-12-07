@@ -15,6 +15,9 @@ def clean_current_dir():
         if(len(file_list[i].split('.')[0])<=3):
             os.remove(os.getcwd()+r'\\'+file_list[i])
             
+def delete_file(file_name):
+    os.remove(os.getcwd()+r'\\'+file_name)
+            
 def Join_Stringlist(inner_item, symbol_1, symbol_2):
                 inner_item = str(inner_item)
                 str_list = inner_item.split(symbol_1)
@@ -36,6 +39,10 @@ def Parse_news_text(request):
         texts = html_source.find_all('div',attrs={"itemprop":"articleBody"})[0].find_all('p')
         for i in range (0,len(texts)):
             texts[i] = Html_replace(texts[i].contents)
+            texts[i] = texts[i].replace("['", '')
+            texts[i] = texts[i].replace("']", '')
+            texts[i] = texts[i].strip()
+        texts = '\n'.join(texts)
         return (texts)
     else:
         return ("Not connected to link")
@@ -45,6 +52,9 @@ def Parse_news_title(request):
         html_source = bs4.BeautifulSoup(request.text,'lxml')
         title = html_source.find_all('h1')[0]
         title = Html_replace(title.contents)
+        title = title.replace("['", '')
+        title = title.replace("']", '')
+        title = title.strip()
         return title
     else:
         return ("Not connected to link")
@@ -64,7 +74,6 @@ def Parse_news_picture(request):
         if(get_linked(href).status_code == 200):
             open(name, 'wb').write(requests.get(href, allow_redirects=True).content)
             return name
-        return ("Not connected to link")
     else:
         return ("Not connected to link")
     
@@ -77,7 +86,6 @@ def Parse_news_date(request):
         for i in range(0,len(title)):
             title[i] = Html_replace(title[i])
             title[i] = title[i].strip()
-        print(title)
         timed=timedelta(
             days=1,
             seconds=0,
@@ -112,14 +120,14 @@ def Parse_news_date(request):
             }
             return date(year, month_switcher[title[1]], day)
     else:
-        return ("Not connected to link")     
+        return ("Not connected to link") 
 
-if(__name__ == "__main__"):    
-    main_link = 'https://panorama.pub/news/ajfony-zabirali-noutbuki-aborigeny-v'
+def Parse_page(main_link):
     req = get_linked(main_link)
     print(os.getcwd())
     clean_current_dir()
-    print(Parse_news_picture(req))
-    print(Parse_news_title(req))
-    print(Parse_news_text(req))
-    print(Parse_news_date(req))
+    return (1, Parse_news_title(req), Parse_news_text(req), Parse_news_date(req), Parse_news_picture(req))    
+
+if(__name__ == "__main__"):
+    main_link = 'https://panorama.pub/news/ajfony-zabirali-noutbuki-aborigeny-v'    
+    print(Parse_page(main_link))
