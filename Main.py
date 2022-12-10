@@ -1,8 +1,11 @@
 import requests
 import bs4
 from datetime import date,timedelta
+import sqlite3
+import site_parse
 
-const= 'https://panorama.pub'
+const = 'https://panorama.pub'
+database_name = "panorama.db"
 
 def get_linked (link):    
     req = requests.get(link)
@@ -16,9 +19,10 @@ def get_links_from_request(request, file_writer):
         if(links is not None):
             if(not links.find('/news')==-1):
                 print(date, const+links)
-                file_writer.write(const+links+"\n") 
+                insert_to_db(const+links) 
 
 def parse_links_from_chapter(date_begin,date_end,chapter):
+    print("Start parsing links from chapter ", chapter) 
     file_writer=open('Links.txt','a')
     if(chapter=='politics' or chapter=='society'):
         timed=timedelta(
@@ -47,12 +51,68 @@ def parse_links_from_chapter(date_begin,date_end,chapter):
             get_links_from_request(req, file_writer)
             page = page + 1
             link = const+"/"+chapter+"?page="+page
-            req = get_linked(link)
-                
-    file_writer.close()    
+            req = get_linked(link)                
+    file_writer.close()
+    print("End parsing links from chapter ", chapter)    
 
-if(__name__ == "__main__"): 
-   #parse_links_from_chapter(date(2022,11,29),date(2022,11,10),'politics')
-   date_begin=date(2022,11,29)
-   date_end=date(2022,11,10) 
-   #date_begin>data_end
+def convert_img_to_BLOB(filename):
+    #convert digital data to binary format and delete the source file
+    my_file = open(filename, 'rb')
+    blob = my_file.read()
+    my_file.close()
+    site.delete_file(filename)
+    return blob
+
+def check_news_by_title(title,database):
+    find_cursor = database.cursor()
+    find_cursor.execute("SELECT title FROM news;")
+    titles_list = find_cursor.fetchall()
+    for i in range (0, len(titles_list)):
+        if(title == titles_list[i]):
+            return -1
+    find_cursor.execute("SELECT COUNT (1) FROM news;")
+    id = find_cursor.fetchone() + 1
+    find_cursor.close()
+    return id
+
+def insert_to_db(link):
+    try:    
+        database = sqlite3.connect(database_name)
+        cursor = database.cursor()
+        print("Connected to SQLite")
+        sqlite_insert_blob_query = """ INSERT INTO news
+                                    (id, title, describtion, date, photo) VALUES (?, ?, ?, ?, ?);"""
+        news_title = site_parse.Parse_news_title(get_linked(link))
+        id = check_news_by_title(news_title, database)
+        if (id!=-1): #function not completed
+            data_tuple = site_parse.Parse_page(link)
+            data_tuple[0] = id
+            data_tuple[3] = str(data_tuple[3])
+            data_tuple[4] = convert_img_to_BLOB(data_tuple[4])
+            cursor.execute(sqlite_insert_blob_query, data_tuple)
+            database.commit()
+            print("Image and file inserted successfully as a BLOB into a table")
+        else:
+            print("News is already in the base")
+        cursor.close()
+    except:
+        print("mistake in insert_to_db")
+        
+def launch_news_DB():
+    database = sqlite3.connect(database_name)
+    cursor = database.cursor()
+    print("Connected to SQLite")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS news(
+    id INT PRIMARY KEY,
+    title TEXT,
+    describtion TEXT,
+    date TEXT,
+    photo BLOB);
+    """)
+    database.commit()
+    print("Launch script was executed")
+    
+launch_news_DB()   
+parse_links_from_chapter(date(2022,11,29),date(2022,11,10),'politics')
+i = input()
+#date_begin>data_end
