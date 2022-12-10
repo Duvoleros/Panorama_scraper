@@ -13,10 +13,10 @@ def clean_current_dir():
     file_list = (os.listdir())
     for i in range(0,len(os.listdir())):
         if(len(file_list[i].split('.')[0])<=3):
-            os.remove(os.getcwd()+r'\\'+file_list[i])
+            os.remove(os.getcwd()+'\\'+file_list[i])
             
 def delete_file(file_name):
-    os.remove(os.getcwd()+r'\\'+file_name)
+    os.remove(os.getcwd()+'\\'+file_name)
             
 def Join_Stringlist(inner_item, symbol_1, symbol_2):
                 inner_item = str(inner_item)
@@ -124,8 +124,6 @@ def Parse_news_date(request):
 
 def Parse_page(main_link):
     req = get_linked(main_link)
-    print(os.getcwd())
-    clean_current_dir()
     return (1, Parse_news_title(req), Parse_news_text(req), Parse_news_date(req), Parse_news_picture(req))    
 
 if(__name__ == "__main__"):

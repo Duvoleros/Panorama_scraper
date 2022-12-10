@@ -12,13 +12,13 @@ def get_linked (link):
     return req
 
 def get_links_from_request(request, file_writer):
-    soup = bs4.BeautifulSoup(request.text, 'html') 
+    soup = bs4.BeautifulSoup(request.text, 'lxml') 
     anchors=soup.find_all('a')
     for i in range(0,len(anchors)):
         links=anchors[i].get('href')
         if(links is not None):
             if(not links.find('/news')==-1):
-                print(date, const+links)
+                print('\t link ', const+links)
                 insert_to_db(const+links) 
 
 def parse_links_from_chapter(date_begin,date_end,chapter):
@@ -60,7 +60,7 @@ def convert_img_to_BLOB(filename):
     my_file = open(filename, 'rb')
     blob = my_file.read()
     my_file.close()
-    site.delete_file(filename)
+    site_parse.delete_file(filename)
     return blob
 
 def check_news_by_title(title,database):
@@ -71,32 +71,32 @@ def check_news_by_title(title,database):
         if(title == titles_list[i]):
             return -1
     find_cursor.execute("SELECT COUNT (1) FROM news;")
-    id = find_cursor.fetchone() + 1
+    id = find_cursor.fetchone()[0] + 1
     find_cursor.close()
     return id
 
 def insert_to_db(link):
-    try:    
-        database = sqlite3.connect(database_name)
-        cursor = database.cursor()
-        print("Connected to SQLite")
-        sqlite_insert_blob_query = """ INSERT INTO news
+    database = sqlite3.connect(database_name)
+    cursor = database.cursor()
+    print("Connected to SQLite")
+    sqlite_insert_blob_query = """ INSERT INTO news
                                     (id, title, describtion, date, photo) VALUES (?, ?, ?, ?, ?);"""
-        news_title = site_parse.Parse_news_title(get_linked(link))
-        id = check_news_by_title(news_title, database)
-        if (id!=-1): #function not completed
-            data_tuple = site_parse.Parse_page(link)
-            data_tuple[0] = id
-            data_tuple[3] = str(data_tuple[3])
-            data_tuple[4] = convert_img_to_BLOB(data_tuple[4])
-            cursor.execute(sqlite_insert_blob_query, data_tuple)
-            database.commit()
-            print("Image and file inserted successfully as a BLOB into a table")
-        else:
-            print("News is already in the base")
-        cursor.close()
-    except:
-        print("mistake in insert_to_db")
+    news_title = site_parse.Parse_news_title(get_linked(link))
+    id = check_news_by_title(news_title, database)    
+    if (id!=-1): #function not completed
+        data_tuple = site_parse.Parse_page(link)
+        data_tuple = list(data_tuple)
+        data_tuple[0] = id
+        data_tuple[3] = str(data_tuple[3])
+        data_tuple[4] = convert_img_to_BLOB(data_tuple[4])
+        cursor.execute(sqlite_insert_blob_query, data_tuple)
+        database.commit()
+        print("Image successfully inserted as a BLOB into a table")
+    else:
+        print("News is already in the base")
+    cursor.close()        
+    print("Disconnected from SQLite")
+    
         
 def launch_news_DB():
     database = sqlite3.connect(database_name)
@@ -112,7 +112,12 @@ def launch_news_DB():
     database.commit()
     print("Launch script was executed")
     
+def parse_all_news_this_year():
+    #
+    return
+    
+
 launch_news_DB()   
-parse_links_from_chapter(date(2022,11,29),date(2022,11,10),'politics')
-i = input()
+parse_links_from_chapter(date(2022,11,29),date(2022,11,23),'society')
 #date_begin>data_end
+    
