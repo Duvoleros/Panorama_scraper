@@ -1,7 +1,9 @@
-import requests
-import bs4
-from datetime import date,timedelta
 import sqlite3
+from datetime import date, timedelta
+
+import bs4
+import requests
+
 import site_parse
 
 const = 'https://panorama.pub'
@@ -117,7 +119,15 @@ def parse_all_news_this_year():
     return
     
 
-launch_news_DB()   
-parse_links_from_chapter(date(2022,11,29),date(2022,11,23),'society')
-#date_begin>data_end
-    
+launch_news_DB()  
+print("Hello to panorama site scrapper!") 
+print("""input the nessesary date till which we need to load news in format 
+yyyy
+mm
+dd""")
+year = int(input())
+month = int(input())
+day = int(input())
+date_ = date(year, month, day)
+parse_links_from_chapter(date.today(),date_,'society')
+  
